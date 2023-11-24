@@ -1,40 +1,41 @@
-import numpy as np, cv2
+import numpy as np
+import cv2
 
 def draw_histo(hist, shape=(200, 256)):
-    hist_img = np.full(shape, 255, np.uint8)
+    hist_img = np.full(shape, 0, np.uint8)  # 검은색 배경으로 초기화
     cv2.normalize(hist, hist, 0, shape[0], cv2.NORM_MINMAX)
-    gap = hist_img.shape[1]/hist.shape[0]
+    gap = hist_img.shape[1] / hist.shape[0]
 
     for i, h in enumerate(hist):
         x = int(round(i * float(gap)))
         w = int(round(float(gap)))
-        cv2.rectangle(hist_img, (x, 0, w, int(h)), 0, cv2.FILLED)
+        pt1 = (x, 0)
+        pt2 = (x + w, 0 + int(h))
+        cv2.rectangle(hist_img, pt1, pt2, 255, cv2.FILLED)  # 흰색으로 변경
 
     return cv2.flip(hist_img, 0)
 
-image = cv2.imread("img/read_gray.jpg", cv2.IMREAD_GRAYSCALE)
-if image is None: raise Exception("영상파일 읽기 오류")
+image = cv2.imread("img/affine_test1.jpg", cv2.IMREAD_GRAYSCALE)
+if image is None:
+    raise Exception("영상파일 읽기 오류")
 
-bins, ranges = [256], [0, 256]
-hist = cv2.calcHist([image], [0], None, bins, ranges)
+# 수직 방향 투영 (열 방향 합)
+vertical_projection = cv2.reduce(image, 0, cv2.REDUCE_AVG).ravel().astype(int)
 
-accum_hist = np.zeros(hist.shape[:2], np.float32)
-accum_hist[0] = hist[0]
-for i in range(1, hist.shape[0]):
-    accum_hist[i] = accum_hist[i - 1] + hist[i]
+# 수평 방향 투영 (행 방향 합)
+horizontal_projection = cv2.reduce(image, 1, cv2.REDUCE_AVG).ravel().astype(int)
 
-accum_hist = (accum_hist / sum(hist)) * 255
-dst1 = [[accum_hist[val] for val in row] for row in image]
-dst1 = np.array(dst1, np.uint8)
 
-dst2 = cv2.equalizeHist(image)
-hist1 = cv2.calcHist([dst1], [0], None, bins, ranges)
-hist2 = cv2.calcHist([dst2], [0], None, bins, ranges)
-hist_img = draw_histo(hist)
-hist_img1 = draw_histo(hist1)
-hist_img2 = draw_histo(hist2)
+hist_img1 = draw_histo(vertical_projection)
+hist_img2 = draw_histo(horizontal_projection)
 
-cv2.imshow("image", image);     cv2.imshow("hist_img", hist_img)
-cv2.imshow("dst1_User", dst1);      cv2.imshow("User_hist", hist_img1)
-cv2.imshow("dst2_OpenCV", dst2);        cv2.imshow("OpenCV_hist", hist_img2)
+hist_img2 = cv2.rotate(hist_img2, cv2.ROTATE_90_CLOCKWISE)
+
+hist_img1 = cv2.resize(hist_img1, (image.shape[1], image.shape[0]))
+hist_img2 = cv2.resize(hist_img2, (image.shape[1], image.shape[0]))
+
+
+cv2.imshow("image", image)
+cv2.imshow("Vertical Projection", hist_img1)
+cv2.imshow("Horizontal Projection", hist_img2)
 cv2.waitKey(0)
