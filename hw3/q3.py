@@ -1,58 +1,49 @@
 import numpy as np, cv2
 
-def calc_histo(image, histSize, ranges=[0, 256]):
-    hist = np.zeros((histSize, 1), np.float32)
-    gap = ranges[1] / histSize
+# 이미지 파일을 읽기 (BGR 포맷)
+img = cv2.imread('img/image3.jpg', cv2.IMREAD_COLOR)
 
-    for row in image:
-        for pix in row:
-            idx = int(pix/gap)
-            hist[idx] += 1
-    return hist
+# BGR에서 HSV로 변환
+hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-image = cv2.imread("img/color_edge.jpg", cv2.IMREAD_COLOR)
-if image is None: raise Exception("영상파일 읽기 실패")
+# 계급 개수 설정
+h_bins = 30
+s_bins = 48
 
-HSV_img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-Hue, Saturation, Intensity = cv2.split(HSV_img)
+result_size = (h_bins * 10, s_bins * 10, 3)  # 크기 조정
+
+# 2차원 히스토그램 계산
+hist_2d = cv2.calcHist([hsv_img], [0, 1], None, [h_bins, s_bins], [0, 180, 0, 256])
+
+# 최대 빈도 값 구하기
+max_frequency = np.max(hist_2d)
+
+# 정규화된 히스토그램을 0~1로 스케일 조정
+hist_2d_normalized = hist_2d / max_frequency
+
+# HSV 이미지 생성
+hsv_color_img = np.zeros((h_bins, s_bins, 3), dtype=np.uint8)
+
+# 히스토그램 값을 HSV 이미지에 복사
+for i in range(h_bins):
+    for j in range(s_bins):
+        h_value = int(i * 180 / h_bins)  # 계급 개수에 따라 정규화
+        s_value = int(j * 256 / s_bins)  # 계급 개수에 따라 정규화
+        v_value = int(hist_2d_normalized[i, j] * 255)  # 빈도수에 따라 정규화
+
+        hsv_color_img[i, j, :] = [h_value, s_value, v_value]
+
+# HSV 이미지를 BGR로 변환
+result_img = cv2.cvtColor(hsv_color_img, cv2.COLOR_HSV2BGR)
+
+result_img2 = np.full(result_size, 0, dtype=np.uint8)
+
+for i in range(h_bins):
+    for j in range(s_bins):
+        result_img2[i * 10: (i + 1) * 10, j * 10: (j + 1) * 10] = result_img[i, j]
 
 
-
-#dst = np.zeros(image.shape[:2], np.uint8)
-#hue = calc_histo(Hue, dst.shape[0])
-#saturation = calc_histo(Saturation, dst.shape[1])
-
-histo = cv2.calcHist( [HSV_img], [0, 1], None, [180, 256], [0, 180, 0, 256] )
-#histo = histo.astype(np.uint8)
-
-dst = np.full((180, 256), 255, np.uint8)
-'''for i in range(dst.shape[0]):
-    for j in range(dst.shape[1]):
-        dst.itemset((i, j), )'''
-
-new_hue = np.array([ [ 179-j for i in range(256)] for j in range(180)])
-new_hue = new_hue.astype(np.float32)
-new_saturation = np.array([ [j for j in range(256) ] for i in range(180)])
-new_saturation = new_saturation.astype(np.float32)
-
-
-#print(type((histo/max(histo.flatten()))[0][0]))
-dst = cv2.merge([new_hue, new_saturation, histo/10])
-#dst = cv2.cvtColor(dst, cv2.COLOR_BGR2HSV)
-
-
-print(new_hue)
-
-title1 = "image"
-title2 = "dst"
-
-cv2.namedWindow(title1, cv2.WINDOW_NORMAL)
-cv2.namedWindow(title2, cv2.WINDOW_NORMAL)
-
-cv2.resizeWindow(title1, 600, 400)
-cv2.resizeWindow(title2, 600, 400)
-
-cv2.imshow(title1, image)
-cv2.imshow(title2, cv2.convertScaleAbs(dst))
-
+# 히스토그램을 이미지로 출력
+cv2.imshow('HSV Color Histogram', result_img2)
 cv2.waitKey(0)
+cv2.destroyAllWindows()
