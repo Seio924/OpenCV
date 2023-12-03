@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 
 def draw_histo(hist, shape):
-    hist_img = np.full(shape, 0, np.uint8)  # 검은색 배경으로 초기화
+    hist_img = np.full(shape, 0, np.uint8)
     cv2.normalize(hist, hist, 0, shape[0], cv2.NORM_MINMAX)
     gap = hist_img.shape[1] / hist.shape[0]
 
@@ -11,7 +11,7 @@ def draw_histo(hist, shape):
         w = int(round(float(gap)))
         pt1 = (x, 0)
         pt2 = (x + w, 0 + int(h))
-        cv2.rectangle(hist_img, pt1, pt2, 255, cv2.FILLED)  # 흰색으로 변경
+        cv2.rectangle(hist_img, pt1, pt2, 255, cv2.FILLED)
 
     return cv2.flip(hist_img, 0)
 

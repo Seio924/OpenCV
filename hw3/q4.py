@@ -36,7 +36,11 @@ sharpen_User = cv2.convertScaleAbs(sharpen_User)
 bluring_OpenCV = cv2.convertScaleAbs(cv2.filter2D(image, cv2.CV_16S, mask_blur))
 sharpen_OpenCV = cv2.convertScaleAbs(cv2.filter2D(image, cv2.CV_16S, mask_sharpen))
 
-titles = ['image', 'bluring_User', 'bluring_OpenCV', 'sharpen_User', 'sharpen_OpenCV']
-for t in titles:
-    cv2.imshow(t, eval(t))
+titles = ['image', 'bluring User', 'bluring OpenCV', 'sharpen User', 'sharpen OpenCV']
+
+cv2.imshow('image', image)
+cv2.imshow('bluring User', bluring_User)
+cv2.imshow('bluring OpenCV', bluring_OpenCV)
+cv2.imshow('sharpen User', sharpen_User)
+cv2.imshow('sharpen OpenCV', sharpen_OpenCV)
 cv2.waitKey(0)
